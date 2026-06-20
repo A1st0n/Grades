@@ -4,6 +4,7 @@
 
 import React from 'react'
 import { gsap } from 'gsap'
+import { Login, useAuth } from './Login'
 
 
 // helper: converts a numeric grade into a letter grade string
@@ -689,6 +690,7 @@ function SearchPanel() {
 // state: view  which page the PillNav is showing
 // state: statusMsg  short success message after each operation
 function App() {
+    const { user, login, logout } = useAuth();
     const [students, setStudents] = React.useState({});
     const [view, setView] = React.useState('students');
     const [statusMsg, setStatusMsg] = React.useState('');
@@ -751,12 +753,25 @@ function App() {
         return <StudentGrid students={students} />;
     }
 
+    if (!user) {
+        return (
+            <React.Fragment>
+                <LightRays />
+                <div className="page"><div className="app"><Login onLogin={login} /></div></div>
+            </React.Fragment>
+        );
+    }
+
     return (
         <React.Fragment>
             <LightRays />
             <div className="page">
                 <PillNav brand="Grade Recorder" items={navItems} activeId={view} onSelect={setView} />
                 <div className="app">
+                    <div className="auth-bar">
+                        Welcome {user.sub} ({user.role}) ·
+                        <button className="logout" onClick={logout}>Sign out</button>
+                    </div>
                     {statusMsg && <div className="status-toast">{statusMsg}</div>}
                     {renderView()}
                 </div>

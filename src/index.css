@@ -406,3 +406,23 @@ kbd {
 
 .search-result-box strong { color: var(--white); font-size: 1.05rem; }
 .search-result-box .grade-num { font-weight: 700; color: #6ee7b7; }
+
+/* ── Login + auth bar  */
+.login-card {
+  max-width: 380px;
+  margin: 80px auto;
+  padding: 32px;
+  background: var(--panel);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.login-card h1 { font-size: 22px; text-align: center; margin-bottom: 8px; }
+.login-card label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-dim); }
+.login-card input { width: 100%; padding: 10px 12px; background: var(--bg); color: var(--white); border: 1px solid var(--border-color); font-family: inherit; }
+.login-card input:focus { outline: none; border-color: var(--purple-border); box-shadow: 0 0 0 2px var(--purple-glow); }
+.login-card button, .logout { background: var(--purple-primary); color: var(--white); border: none; padding: 10px 14px; cursor: pointer; font-family: inherit; }
+.login-err { color: #ff6b6b; font-size: 13px; }
+.auth-bar { display: flex; align-items: center; gap: 8px; justify-content: flex-end; color: var(--text-dim); font-size: 13px; margin-bottom: 16px; }
+.auth-bar .logout { padding: 4px 10px; }
