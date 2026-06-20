@@ -1,16 +1,39 @@
-# React + Vite
+# ACME University — Student Enrollment
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React (Vite) frontend + Flask backend. Currently: role-based login with an
+expiring JWT (student / teacher / admin).
 
-Currently, two official plugins are available:
+## Setup (once per clone)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+# frontend deps
+npm install
 
-## React Compiler
+# backend deps
+cd backend
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+cd ..
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Run (two terminals)
 
-## Expanding the ESLint configuration
+```bash
+# terminal 1 — backend (http://localhost:5001)
+cd backend && .venv/bin/python app.py
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+# terminal 2 — frontend (http://localhost:5173)
+npm run dev
+```
+
+Open http://localhost:5173. The Vite dev server proxies `/api` to Flask on 5001.
+
+## Logins
+
+| Username    | Password    | Role    |
+|-------------|-------------|---------|
+| `admin`     | `admin123`  | admin   |
+| `stu`       | `student123`| student |
+| `ahepworth` | `teacher123`| teacher |
+
+Dev seeds only — change them, and set `JWT_SECRET`, before deploying.
