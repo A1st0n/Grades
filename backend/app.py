@@ -18,7 +18,7 @@ def _hash(pw):
 # wants once the rest of the app lands login code below won't change.
 USERS = {
     "admin": {"role": "admin", "pw": _hash("admin123")},
-    "cnorris": {"role": "student", "pw": _hash("student123")},
+    "stu": {"role": "student", "pw": _hash("student123")},
     "ahepworth": {"role": "teacher", "pw": _hash("teacher123")},
 }
 
