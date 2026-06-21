@@ -1,62 +1,78 @@
 import React from 'react'
 
-// Decodes a JWT payload (no verify, server signs, this just reads exp/role).
-// ponytail: client-side read only; the server re-verifies the signature.
 function decode(token) {
-    try {
-        const p = JSON.parse(atob(token.split('.')[1]));
-        if (p.exp * 1000 < Date.now()) return null; // expired
-        return p;
-    } catch {
-        return null;
-    }
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    if (payload.exp * 1000 < Date.now()) return null
+    return payload
+  } catch {
+    return null
+  }
 }
 
-// Returns the logged-in user {sub, role} or null. Also clears expired tokens.
 export function useAuth() {
-    const [token, setToken] = React.useState(() => localStorage.getItem('token'));
-    const user = token && decode(token);
-    if (token && !user) localStorage.removeItem('token'); // expired
+  const [token, setToken] = React.useState(() => localStorage.getItem('token'))
+  const user = token ? decode(token) : null
 
-    const login = (t) => { localStorage.setItem('token', t); setToken(t); };
-    const logout = () => { localStorage.removeItem('token'); setToken(null); };
-    return { user: user || null, login, logout };
+  function login(newToken) {
+    localStorage.setItem('token', newToken)
+    setToken(newToken)
+  }
+
+  function logout() {
+    localStorage.removeItem('token')
+    setToken(null)
+  }
+
+  if (token && !user) {
+    localStorage.removeItem('token')
+  }
+
+  return { user, token, login, logout }
 }
 
 export function Login({ onLogin }) {
-    const [username, setUsername] = React.useState('');
-    const [password, setPassword] = React.useState('');
-    const [err, setErr] = React.useState('');
+  const [username, setUsername] = React.useState('')
+  const [password, setPassword] = React.useState('')
+  const [error, setError] = React.useState('')
 
-    function submit(e) {
-        e.preventDefault();
-        setErr('');
-        fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password }),
-        })
-            .then(async (r) => {
-                const data = await r.json();
-                if (!r.ok) throw new Error(data.error || 'Login failed');
-                onLogin(data.token);
-            })
-            .catch((e) => setErr(e.message));
-    }
+  function submit(e) {
+    e.preventDefault()
+    setError('')
 
-    return (
-        <form className="login-card" onSubmit={submit}>
-            <h1>ACME University</h1>
-            <label>Username
-                <input type="text" value={username} autoFocus
-                    onChange={(e) => setUsername(e.target.value)} />
-            </label>
-            <label>Password
-                <input type="password" value={password}
-                    onChange={(e) => setPassword(e.target.value)} />
-            </label>
-            {err && <div className="login-err">{err}</div>}
-            <button type="submit">Sign in</button>
-        </form>
-    );
+    fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+      .then(r => r.json().then(data => ({ ok: r.ok, data })))
+      .then(result => {
+        if (!result.ok) {
+          setError(result.data.error || 'Login failed')
+        } else {
+          onLogin(result.data.token)
+        }
+      })
+      .catch(() => setError('Could not reach server'))
+  }
+
+  return (
+    <form className="login-card" onSubmit={submit}>
+      <h1>ACME University</h1>
+      <label>
+        Username
+        <input value={username} onChange={e => setUsername(e.target.value)} />
+      </label>
+      <label>
+        Password
+        <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
+      </label>
+      {error && <p className="error">{error}</p>}
+      <button>Sign in</button>
+      <div className="login-help">
+        <p>Student: cnorris / student123</p>
+        <p>Admin: admin / admin123</p>
+      </div>
+    </form>
+  )
 }
