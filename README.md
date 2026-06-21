@@ -1,87 +1,92 @@
-# ACME University — Student Enrollment
+# ACME University — Lab 6 Student Enrollment
 
-A React (Vite) frontend talking to a Flask backend. Right now it does
-role-based login with an expiring JWT (student / teacher / admin).
+This version uses a React frontend and a Flask backend with a SQLite database.
+The student and admin parts are implemented in a simple way for class.
 
-You run **two things at once**: the backend (Flask, port 5001) and the
-frontend (Vite, port 5173). They talk to each other, so both must be running.
+## What is included
 
----
+- Login and logout
+- Student page
+  - See your courses
+  - See all classes offered
+  - See how many students are enrolled
+  - Add a class if it is not full
+- Admin page
+  - Create, read, update, and delete users
+  - Create, read, update, and delete courses
+  - Create, read, update, and delete enrollments
+- SQLite database using SQLAlchemy
 
-## 1. First-time setup (do this once after cloning)
+## Test logins
 
-You need [Node.js](https://nodejs.org) and Python 3 installed first.
+| Role | Username | Password |
+|------|----------|----------|
+| Student | cnorris | student123 |
+| Student | mlopez | student123 |
+| Admin | admin | admin123 |
+| Teacher | ahepworth | teacher123 |
+
+## First time setup
+
+Open one terminal in the main project folder and run:
 
 ```bash
-# install frontend dependencies
 npm install
-
-# install backend dependencies into a virtual environment
-cd backend
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-cd ..
 ```
 
-What this does:
- `npm install` → downloads the React/Vite packages into `node_modules/`.
-`python3 -m venv .venv` → creates an isolated Python environment in `backend/.venv/`.
- `pip install -r requirements.txt` → installs Flask + PyJWT into that environment.
+Then install the backend packages:
 
-You only do this once. `node_modules/` and `.venv/` are gitignored, so they
-are **not** on GitHub — every person who clones runs this step themselves.
-
----
-
-## 2. Running the app (every time)
-
-Open **two terminals**.
-
-**Terminal 1 — backend:**
 ```bash
 cd backend
-.venv/bin/python app.py
+python -m pip install -r requirements.txt
 ```
-Wait until you see `Running on http://127.0.0.1:5001`. Leave it running.
 
-**Terminal 2 — frontend:**
+On Windows, you may need:
+
+```bash
+py -m pip install -r requirements.txt
+```
+
+## Running the app
+
+You need two terminals.
+
+### Terminal 1: backend
+
+```bash
+cd backend
+python app.py
+```
+
+or on Windows:
+
+```bash
+cd backend
+py app.py
+```
+
+Leave this running. It uses port 5001.
+
+### Terminal 2: frontend
+
+From the main project folder:
+
 ```bash
 npm run dev
 ```
-Then open the URL it prints: **http://localhost:5173**
 
-To stop either one, press `Ctrl+C` in its terminal.
+Open the link Vite gives you, usually:
 
----
+```text
+http://localhost:5173
+```
 
-## 3. Logging in
+## Database note
 
-| Username    | Password     | Role    |
-|-------------|--------------|---------|
-| `admin`     | `admin123`   | admin   |
-| `stu`       | `student123` | student |
-| `ahepworth` | `teacher123` | teacher |
+The database file is created automatically as:
 
-These are development logins only. Change them and set a real `JWT_SECRET`
-environment variable, before putting this anywhere public.
+```text
+backend/school.db
+```
 
----
-
-## Troubleshooting
-
-**"Failed to execute 'json' on 'Response'" when I click Sign in**
-The backend isn't running, or the frontend can't reach it. Make sure Terminal 1
-(`.venv/bin/python app.py`) is running and shows port **5001**.
-
-**Terminal shows `ECONNREFUSED` / `http proxy error`**
-Same cause — the backend isn't up. Start it (Terminal 1) and try again.
-
-**`Address already in use` on port 5001**
-Something else grabbed the port. Stop it, or change the port in both
-`backend/app.py` (`app.run(port=...)`) and `vite.config.js` (the proxy target).
-Note: on macOS, port **5000** is used by AirPlay Receiver — that's why this app
-uses 5001.
-
-**Changed `vite.config.js` and nothing happened**
-Vite only reads its config at startup. Stop `npm run dev` (`Ctrl+C`) and run it
-again.
+If you want to reset the sample data, stop Flask, delete `backend/school.db`, and run `python app.py` again.
