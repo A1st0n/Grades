@@ -6,7 +6,7 @@ function authHeader(token) {
   return { Authorization: 'Bearer ' + token }
 }
 
-function CourseTable({ title, courses, showAdd, onAdd }) {
+function CourseTable({ title, courses, showAdd, onAdd, onDrop }) {
   return (
     <div className="box">
       <h2>{title}</h2>
@@ -33,7 +33,7 @@ function CourseTable({ title, courses, showAdd, onAdd }) {
               {showAdd && (
                 <td>
                   {course.already_enrolled ? (
-                    <span className="small-text">Already added</span>
+                    <button className="danger" onClick={() => onDrop(course.id)}>Drop</button>
                   ) : course.full ? (
                     <span className="small-text">Full</span>
                   ) : (
@@ -85,6 +85,22 @@ function StudentPage({ user, token }) {
       })
   }
 
+  function dropClass(courseId) {
+  fetch('/api/student/classes/' + courseId + '/drop', {
+    method: 'DELETE',
+    headers: authHeader(token),
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        setMessage(data.error)
+      } else {
+        setMessage('Class dropped.')
+        loadStudentData()
+      }
+    })
+  }
+
   return (
     <div>
       <h1>Welcome {user.name}!</h1>
@@ -100,7 +116,8 @@ function StudentPage({ user, token }) {
       )}
 
       {page === 'add' && (
-        <CourseTable title="All Classes Offered" courses={allCourses} showAdd={true} onAdd={addClass} />
+        <CourseTable title="All Classes Offered" courses={allCourses} showAdd={true} onAdd={addClass} onDrop={dropClass}
+/>
       )}
     </div>
   )
