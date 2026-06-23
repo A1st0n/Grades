@@ -1,96 +1,59 @@
-# ACME University — Lab 6 Student Enrollment
+# Course Enrollment System
 
-This version uses a React frontend and a Flask backend with a SQLite database.
-The student and admin parts are implemented in a simple way for class.
+A full-stack web application for managing university course enrollment, with
+role-based access for students, teachers, and admins. Built to demonstrate
+end-to-end full-stack development: authentication, a REST API, relational data
+modeling, and a component-based UI.
 
-## What is included
+## Tech Stack
 
-- Login and logout
-- Student page
-  - See your courses
-  - See all classes offered
-  - See how many students are enrolled
-  - Add a class if it is not full
-- Admin page
-  - Create, read, update, and delete users
-  - Create, read, update, and delete courses
-  - Create, read, update, and delete enrollments
-- Teacher page
-  - See your courses
-  - See enrolled students and grades
-  - Edit a student grade
-- SQLite database using SQLAlchemy
+**Frontend:** React 19, Vite
+**Backend:** Flask, SQLAlchemy ORM, JWT auth
+**Database:** SQLite
+**Infra:** Docker (multi-stage build)
 
-## Test logins
+## Features
+
+- **JWT authentication** with role-based access control (student / teacher / admin)
+  and hashed passwords.
+- **REST API** using proper HTTP verbs and status codes, guarding every endpoint
+  by role.
+- **Students** browse offered courses, see live enrollment counts, and add/drop
+  classes (with capacity enforcement).
+- **Teachers** view their rosters and edit student grades (validated 0–100).
+- **Admins** get full CRUD over users, courses, and enrollments.
+
+## Architecture
+
+React SPA (Vite dev server) → proxied `/api` → Flask REST backend → SQLAlchemy → SQLite.
+Auth is a JWT issued on login, sent as a Bearer token and verified per request.
+
+## Running locally
+
+Requires Node and Python 3.
+
+**Backend** (terminal 1):
+\`\`\`bash
+cd backend
+python3 -m venv venv && ./venv/bin/pip install -r requirements.txt
+./venv/bin/python app.py        # http://localhost:5001
+\`\`\`
+
+**Frontend** (terminal 2):
+\`\`\`bash
+npm install
+npm run dev                     # http://localhost:5173
+\`\`\`
+
+### Demo logins
 
 | Role | Username | Password |
 |------|----------|----------|
-| Student | cnorris | student123 |
-| Student | mlopez | student123 |
 | Admin | admin | admin123 |
 | Teacher | ahepworth | teacher123 |
+| Student | cnorris | student123 |
 
-## First time setup
+## Possible next steps
 
-Open one terminal in the main project folder and run:
-
-```bash
-npm install
-```
-
-Then install the backend packages:
-
-```bash
-cd backend
-python -m pip install -r requirements.txt
-```
-
-On Windows, you may need:
-
-```bash
-py -m pip install -r requirements.txt
-```
-
-## Running the app
-
-You need two terminals.
-
-### Terminal 1: backend
-
-```bash
-cd backend
-python app.py
-```
-
-or on Windows:
-
-```bash
-cd backend
-py app.py
-```
-
-Leave this running. It uses port 5001.
-
-### Terminal 2: frontend
-
-From the main project folder:
-
-```bash
-npm run dev
-```
-
-Open the link Vite gives you, usually:
-
-```text
-http://localhost:5173
-```
-
-## Database note
-
-The database file is created automatically as:
-
-```text
-backend/school.db
-```
-
-If you want to reset the sample data, stop Flask, delete `backend/school.db`, and run `python app.py` again.
+Refresh tokens, Postgres for production, pytest API coverage, and an nginx `/api`
+proxy in the Docker image so the containerized build talks to the backend.
