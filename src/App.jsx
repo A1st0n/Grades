@@ -212,7 +212,11 @@ function AdminUsers({ token }) {
               <td>{user.role}</td>
               <td>
                 <button onClick={() => editUser(user)}>Edit</button>
-                <button className="danger" onClick={() => deleteUser(user.id)}>Delete</button>
+                {user.can_delete ?(
+                  <button className="danger" onClick={() => deleteUser(user.id)}>Delete</button>
+                ) : (
+                  <span>Current User</span>
+                )}
               </td>
             </tr>
           ))}
@@ -538,4 +542,4 @@ function App() {
   )
 }
 
-export default App  
+export default App
