@@ -261,6 +261,28 @@ def enroll_in_class(course_id):
 
     return jsonify(message="Class added", course=course_to_dict(course, user))
 
+@app.delete("/api/student/classes/<int:course_id>/drop")
+def drop_class(course_id):
+    user, error = require_login()
+    if error:
+        return error
+
+    if user.role != "student":
+        return jsonify(error="Only students can drop classes"), 403
+
+    enrollment = Enrollment.query.filter_by(
+        user_id=user.id,
+        course_id=course_id
+    ).first()
+
+    if enrollment is None:
+        return jsonify(error="Not enrolled"), 404
+
+    db.session.delete(enrollment)
+    db.session.commit()
+
+    return jsonify(message="Dropped successfully")
+
 
 # -------------------------
 # Simple teacher API, so the login is not a dead end
