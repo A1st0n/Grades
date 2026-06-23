@@ -8,7 +8,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 
-SECRET = os.environ.get("JWT_SECRET", "dev-secret-change-me")
+SECRET = os.environ.get("JWT_SECRET", "dev-secret-change-me-to-a-32-byte-string")
 TOKEN_TTL = datetime.timedelta(hours=2)
 
 # SQLite database file will be made inside the backend folder
@@ -90,6 +90,15 @@ def require_admin():
     return user, None
 
 
+def require_teacher():
+    user, error = require_login()
+    if error:
+        return None, error
+    if user.role != "teacher":
+        return None, (jsonify(error="Teachers only"), 403)
+    return user, None
+
+
 def course_to_dict(course, student=None):
     enrolled_count = Enrollment.query.filter_by(course_id=course.id).count()
     already_enrolled = False
@@ -120,6 +129,31 @@ def user_to_dict(user):
         "display_name": user.display_name,
         "role": user.role,
     }
+
+
+def teacher_name_for(user):
+    return user.display_name.replace("Dr ", "")
+
+
+def teacher_can_access_course(user, course):
+    return teacher_name_for(user) in course.teacher
+
+
+def teacher_course_to_dict(course):
+    item = course_to_dict(course)
+    rows = Enrollment.query.filter_by(course_id=course.id).all()
+    rows = sorted(rows, key=lambda row: row.user.display_name)
+    item["students"] = [
+        {
+            "enrollment_id": row.id,
+            "student_id": row.user_id,
+            "student_name": row.user.display_name,
+            "username": row.user.username,
+            "grade": row.grade,
+        }
+        for row in rows
+    ]
+    return item
 
 
 def enrollment_to_dict(row):
@@ -262,16 +296,48 @@ def enroll_in_class(course_id):
 
 @app.get("/api/teacher/courses")
 def teacher_courses():
-    user, error = require_login()
+    user, error = require_teacher()
     if error:
         return error
 
-    if user.role != "teacher":
-        return jsonify(error="Teachers only"), 403
-
-    teacher_name = user.display_name.replace("Dr ", "")
+    teacher_name = teacher_name_for(user)
     courses = Course.query.filter(Course.teacher.contains(teacher_name)).all()
-    return jsonify([course_to_dict(course) for course in courses])
+    return jsonify([teacher_course_to_dict(course) for course in courses])
+
+
+@app.put("/api/teacher/courses/<int:course_id>/students/<int:student_id>/grade")
+def teacher_edit_grade(course_id, student_id):
+    user, error = require_teacher()
+    if error:
+        return error
+
+    course = Course.query.get(course_id)
+    if course is None or not teacher_can_access_course(user, course):
+        return jsonify(error="Course not found"), 404
+
+    row = Enrollment.query.filter_by(course_id=course_id, user_id=student_id).first()
+    if row is None:
+        return jsonify(error="Student is not enrolled in this course"), 404
+
+    data = request.get_json(silent=True) or {}
+    grade = data.get("grade", None)
+
+    if grade == "":
+        grade = None
+
+    if grade is not None:
+        try:
+            grade = float(grade)
+        except (TypeError, ValueError):
+            return jsonify(error="Grade must be a number"), 400
+
+        if grade < 0 or grade > 100:
+            return jsonify(error="Grade must be between 0 and 100"), 400
+
+    row.grade = grade
+    db.session.commit()
+
+    return jsonify(teacher_course_to_dict(course))
 
 
 # -------------------------

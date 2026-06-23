@@ -1,5 +1,6 @@
 import React from 'react'
-import { Login, useAuth } from './Login'
+import { useAuth } from './auth'
+import { Login } from './Login'
 
 function authHeader(token) {
   return { Authorization: 'Bearer ' + token }
@@ -54,7 +55,7 @@ function StudentPage({ user, token }) {
   const [page, setPage] = React.useState('mine')
   const [message, setMessage] = React.useState('')
 
-  function loadStudentData() {
+  const loadStudentData = React.useCallback(function loadStudentData() {
     fetch('/api/student/my-courses', { headers: authHeader(token) })
       .then(r => r.json())
       .then(data => setMyCourses(data))
@@ -62,11 +63,11 @@ function StudentPage({ user, token }) {
     fetch('/api/student/classes', { headers: authHeader(token) })
       .then(r => r.json())
       .then(data => setAllCourses(data))
-  }
+  }, [token])
 
   React.useEffect(() => {
     loadStudentData()
-  }, [])
+  }, [loadStudentData])
 
   function addClass(courseId) {
     fetch('/api/student/classes/' + courseId + '/enroll', {
@@ -122,13 +123,13 @@ function AdminUsers({ token }) {
   const [role, setRole] = React.useState('student')
   const [message, setMessage] = React.useState('')
 
-  function loadUsers() {
+  const loadUsers = React.useCallback(function loadUsers() {
     fetch('/api/admin/users', { headers: authHeader(token) })
       .then(r => r.json())
       .then(data => setUsers(data))
-  }
+  }, [token])
 
-  React.useEffect(() => { loadUsers() }, [])
+  React.useEffect(() => { loadUsers() }, [loadUsers])
 
   function addUser(e) {
     e.preventDefault()
@@ -230,13 +231,13 @@ function AdminCourses({ token }) {
   const [capacity, setCapacity] = React.useState('')
   const [message, setMessage] = React.useState('')
 
-  function loadCourses() {
+  const loadCourses = React.useCallback(function loadCourses() {
     fetch('/api/admin/courses', { headers: authHeader(token) })
       .then(r => r.json())
       .then(data => setCourses(data))
-  }
+  }, [token])
 
-  React.useEffect(() => { loadCourses() }, [])
+  React.useEffect(() => { loadCourses() }, [loadCourses])
 
   function addCourse(e) {
     e.preventDefault()
@@ -337,13 +338,13 @@ function AdminEnrollments({ token }) {
   const [grade, setGrade] = React.useState('')
   const [message, setMessage] = React.useState('')
 
-  function loadAll() {
+  const loadAll = React.useCallback(function loadAll() {
     fetch('/api/admin/users', { headers: authHeader(token) }).then(r => r.json()).then(data => setUsers(data))
     fetch('/api/admin/courses', { headers: authHeader(token) }).then(r => r.json()).then(data => setCourses(data))
     fetch('/api/admin/enrollments', { headers: authHeader(token) }).then(r => r.json()).then(data => setRows(data))
-  }
+  }, [token])
 
-  React.useEffect(() => { loadAll() }, [])
+  React.useEffect(() => { loadAll() }, [loadAll])
 
   function addEnrollment(e) {
     e.preventDefault()
@@ -455,18 +456,100 @@ function AdminPage({ user, token }) {
 
 function TeacherPage({ user, token }) {
   const [courses, setCourses] = React.useState([])
+  const [selectedCourseId, setSelectedCourseId] = React.useState(null)
+  const [message, setMessage] = React.useState('')
 
   React.useEffect(() => {
     fetch('/api/teacher/courses', { headers: authHeader(token) })
       .then(r => r.json())
-      .then(data => setCourses(data))
-  }, [])
+      .then(data => {
+        setCourses(data)
+        setSelectedCourseId(oldId => oldId || data[0]?.id || null)
+      })
+  }, [token])
+
+  const selectedCourse = courses.find(course => course.id === selectedCourseId) || courses[0]
+
+  function editGrade(student) {
+    const currentGrade = student.grade === null ? '' : student.grade
+    const newGrade = prompt('Grade:', currentGrade)
+    if (newGrade === null) return
+
+    let grade = null
+    if (newGrade.trim() !== '') {
+      grade = Number(newGrade)
+      if (Number.isNaN(grade) || grade < 0 || grade > 100) {
+        setMessage('Grade must be a number from 0 to 100.')
+        return
+      }
+    }
+
+    fetch('/api/teacher/courses/' + selectedCourse.id + '/students/' + student.student_id + '/grade', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeader(token) },
+      body: JSON.stringify({ grade }),
+    })
+      .then(r => r.json().then(data => ({ ok: r.ok, data })))
+      .then(result => {
+        if (!result.ok) {
+          setMessage(result.data.error || 'Could not update grade.')
+        } else {
+          setCourses(currentCourses => currentCourses.map(course =>
+            course.id === result.data.id ? result.data : course))
+          setMessage('Grade updated.')
+        }
+      })
+  }
 
   return (
     <div>
       <h1>Welcome {user.name}!</h1>
       <CourseTable title="Your Courses" courses={courses} showAdd={false} />
-      <p className="helper">Teacher grade editing can be added by the teammate working on the teacher part.</p>
+      {message && <p className="message">{message}</p>}
+
+      {courses.length > 0 && (
+        <div className="tabs">
+          {courses.map(course => (
+            <button
+              key={course.id}
+              className={selectedCourse?.id === course.id ? 'active' : ''}
+              onClick={() => setSelectedCourseId(course.id)}
+            >
+              {course.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {selectedCourse && (
+        <div className="box">
+          <h2>{selectedCourse.name} Roster</h2>
+          <p className="helper">Click Edit Grade to update a student's grade.</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Username</th>
+                <th>Grade</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {selectedCourse.students.length === 0 && (
+                <tr><td colSpan="4">No students enrolled yet.</td></tr>
+              )}
+              {selectedCourse.students.map(student => (
+                <tr key={student.enrollment_id}>
+                  <td>{student.student_name}</td>
+                  <td>{student.username}</td>
+                  <td>{student.grade === null ? 'No grade' : student.grade}</td>
+                  <td><button onClick={() => editGrade(student)}>Edit Grade</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

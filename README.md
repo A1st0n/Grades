@@ -15,6 +15,10 @@ The student and admin parts are implemented in a simple way for class.
   - Create, read, update, and delete users
   - Create, read, update, and delete courses
   - Create, read, update, and delete enrollments
+- Teacher page
+  - See your courses
+  - See enrolled students and grades
+  - Edit a student grade
 - SQLite database using SQLAlchemy
 
 ## Test logins
