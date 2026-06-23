@@ -1,36 +1,5 @@
 import React from 'react'
 
-function decode(token) {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    if (payload.exp * 1000 < Date.now()) return null
-    return payload
-  } catch {
-    return null
-  }
-}
-
-export function useAuth() {
-  const [token, setToken] = React.useState(() => localStorage.getItem('token'))
-  const user = token ? decode(token) : null
-
-  function login(newToken) {
-    localStorage.setItem('token', newToken)
-    setToken(newToken)
-  }
-
-  function logout() {
-    localStorage.removeItem('token')
-    setToken(null)
-  }
-
-  if (token && !user) {
-    localStorage.removeItem('token')
-  }
-
-  return { user, token, login, logout }
-}
-
 export function Login({ onLogin }) {
   const [username, setUsername] = React.useState('')
   const [password, setPassword] = React.useState('')
@@ -71,6 +40,7 @@ export function Login({ onLogin }) {
       <button>Sign in</button>
       <div className="login-help">
         <p>Student: cnorris / student123</p>
+        <p>Teacher: ahepworth / teacher123</p>
         <p>Admin: admin / admin123</p>
       </div>
     </form>
